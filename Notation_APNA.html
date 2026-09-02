@@ -911,6 +911,7 @@ let state={
   labelRemediation:'',
   evalNames:[],
   evalIndNames:[],
+  evalSimNames:[],
   candidates:JSON.parse(localStorage.getItem('apna_candidates')||'[]')
 };
 let currentTab=0;
@@ -1288,6 +1289,24 @@ function openFNPT(){
   let html='';
   const compSkipped=state.fnpt.compSkipped||{};
 
+  // Évaluateur simulateur
+  const simTags=(state.evalSimNames||[]).map((n,i)=>
+    `<span class="eval-tag">${n}<button onmousedown="removeEvalSim(${i})">×</button></span>`
+  ).join('');
+  html+=`<div style="margin-bottom:16px;padding:12px 16px;background:#EEF2F8;border-radius:var(--radius);border:1px solid var(--border)">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.3px;color:var(--navy);margin-bottom:8px">Évaluateur Simulateur</div>
+    <div class="eval-tags" id="tags-eval_sim" style="margin-bottom:6px">${simTags}</div>
+    <div class="eval-combo-wrap">
+      <div class="eval-combo-rel" style="position:relative">
+        <input class="eval-combo-input" type="text" id="f_eval_sim" placeholder="Chercher ou taper…" autocomplete="off"
+          onfocus="openComboSim()" oninput="filterComboSim(this.value)" onblur="delayCloseComboSim()" onkeydown="evalKeydownSim(event)"
+          style="background:rgba(255,255,255,.9);color:var(--navy)">
+        <div class="eval-combo-dropdown" id="combo-eval_sim-list"></div>
+      </div>
+      <button class="eval-add-btn" style="background:var(--blue-mid);color:#fff;border-color:var(--blue-mid)" onmousedown="addEvalSimFromInput()">+ Ajouter</button>
+    </div>
+  </div>`;
+
   html+=`<div style="margin-bottom:16px">
     <div class="fnpt-section-header">COMPÉTENCES GLOBALES — NOTE (1–5)</div>
     <table class="fnpt-table">
@@ -1338,6 +1357,48 @@ function toggleFNPTSkip(id){
   if(state.fnpt.compSkipped[id]&&state.fnpt.compNotes) state.fnpt.compNotes[id]=0;
   openFNPT();
 }
+function removeEvalSim(idx){
+  if(!state.evalSimNames)state.evalSimNames=[];
+  state.evalSimNames.splice(idx,1);
+  openFNPT();
+}
+function addEvalSimFromInput(){
+  const input=document.getElementById('f_eval_sim');
+  const name=input.value.trim();
+  if(!name)return;
+  if(!state.evalSimNames)state.evalSimNames=[];
+  if(!state.evalSimNames.map(n=>n.toLowerCase()).includes(name.toLowerCase())){
+    state.evalSimNames.push(name);
+    saveEvalName(name);
+    openFNPT();
+  }
+  input.value='';
+  document.getElementById('combo-eval_sim-list').classList.remove('open');
+  setTimeout(()=>{const i=document.getElementById('f_eval_sim');if(i)i.focus();},50);
+}
+function evalKeydownSim(e){if(e.key==='Enter'){e.preventDefault();addEvalSimFromInput();}}
+function openComboSim(){renderComboListSim('');document.getElementById('combo-eval_sim-list').classList.add('open');}
+function filterComboSim(val){renderComboListSim(val);document.getElementById('combo-eval_sim-list').classList.add('open');}
+function renderComboListSim(filter){
+  const already=(state.evalSimNames||[]).map(n=>n.toLowerCase());
+  const list=getEvalList().filter(n=>!already.includes(n.toLowerCase()));
+  const q=(filter||'').toLowerCase();
+  const filtered=list.filter(n=>n.toLowerCase().includes(q));
+  const el=document.getElementById('combo-eval_sim-list');
+  if(!el)return;
+  if(!filtered.length){el.innerHTML='<div class="eval-combo-option" style="color:rgba(0,0,0,.4);cursor:default;font-style:italic">Entée ou "+ Ajouter"</div>';return;}
+  el.innerHTML=filtered.map(n=>`<div class="eval-combo-option" style="color:rgba(255,255,255,.85)" onmousedown="selectEvalSimOption('${n.replace(/'/g,"\\'")}')">+ ${n}</div>`).join('');
+}
+function selectEvalSimOption(name){
+  if(!state.evalSimNames)state.evalSimNames=[];
+  if(!state.evalSimNames.map(n=>n.toLowerCase()).includes(name.toLowerCase())){
+    state.evalSimNames.push(name);
+    openFNPT();
+  }
+  document.getElementById('f_eval_sim').value='';
+  document.getElementById('combo-eval_sim-list').classList.remove('open');
+}
+function delayCloseComboSim(){setTimeout(()=>{const el=document.getElementById('combo-eval_sim-list');if(el)el.classList.remove('open');},200);}
 function saveFNPT(){closeModal('fnpt');renderTab(1);}
 
 /* ══════════════════════════════════════════════════════
@@ -1493,6 +1554,7 @@ function saveCandidate(){
   const rec={...hf,
     evalNames:[...state.evalNames],
     evalIndNames:[...state.evalIndNames],
+    evalSimNames:[...(state.evalSimNames||[])],
     notes:{...state.notes},markers:JSON.parse(JSON.stringify(state.markers)),
     commentaires:state.commentaires,remediation:state.remediation,
     resultat,score:score||0,
@@ -1518,6 +1580,7 @@ function loadCandidate(i){
   document.getElementById('f_eval_ind').value='';
   state.evalNames=Array.isArray(c.evalNames)?c.evalNames:(c.eval?c.eval.split(',').map(s=>s.trim()).filter(Boolean):[]);
   state.evalIndNames=Array.isArray(c.evalIndNames)?c.evalIndNames:(c.eval_ind?c.eval_ind.split(',').map(s=>s.trim()).filter(Boolean):[]);
+  state.evalSimNames=Array.isArray(c.evalSimNames)?c.evalSimNames:[];
   setTimeout(()=>{renderTags('eval');renderTags('eval_ind');},0);
   if(c.statut){const el=document.querySelector(`input[name="statut"][value="${c.statut}"]`);if(el)el.checked=true}
   state.notes=c.notes?{...c.notes}:{};
@@ -1563,7 +1626,7 @@ function resetForm(){
   ['f_nom','f_prenom','f_cie'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f_eval').value='';
   document.getElementById('f_eval_ind').value='';
-  state.evalNames=[];state.evalIndNames=[];
+  state.evalNames=[];state.evalIndNames=[];state.evalSimNames=[];
   renderTags('eval');renderTags('eval_ind');
   document.querySelectorAll('input[name="statut"]').forEach(r=>r.checked=false);
   document.getElementById('f_date').value=new Date().toISOString().split('T')[0];
@@ -1708,9 +1771,11 @@ function generatePDFLabel(){
   if(hf.cie)details.push(`Compagnie : ${hf.cie}`);
   if(hf.date)details.push(`Date : ${hf.date}`);
   doc.setFontSize(8);
-  const evalLines=hf.eval?doc.splitTextToSize(`Évaluateurs : ${hf.eval}`,CW-10):[];
-  const evalIndLines=hf.eval_ind?doc.splitTextToSize(`Évaluateurs entretien : ${hf.eval_ind}`,CW-10):[];
-  const extraLines=evalLines.length+evalIndLines.length;
+  const evalLines=hf.eval?doc.splitTextToSize(`Evaluateurs : ${hf.eval}`,CW-10):[];
+  const evalIndLines=hf.eval_ind?doc.splitTextToSize(`Evaluateurs entretien : ${hf.eval_ind}`,CW-10):[];
+  const evalSimStr=(state.evalSimNames&&state.evalSimNames.length)?state.evalSimNames.join(', '):'';
+  const evalSimLines=evalSimStr?doc.splitTextToSize(`Evaluateur simulateur : ${evalSimStr}`,CW-10):[];
+  const extraLines=evalLines.length+evalIndLines.length+evalSimLines.length;
   const boxH=Math.max(24,18+extraLines*5);
   drawRect(M,y,CW,boxH,3,lt);
   txt(`${hf.nom.toUpperCase()} ${hf.prenom}`,M+6,y+8,14,navy,'bold');
@@ -1719,6 +1784,7 @@ function generatePDFLabel(){
   doc.setFontSize(8);doc.setTextColor(...slate);doc.setFont('helvetica','normal');
   evalLines.forEach(l=>{doc.text(l,M+6,ly);ly+=5;});
   evalIndLines.forEach(l=>{doc.text(l,M+6,ly);ly+=5;});
+  evalSimLines.forEach(l=>{doc.text(l,M+6,ly);ly+=5;});
   y+=boxH+8;
 
   // Resultats par epreuve
