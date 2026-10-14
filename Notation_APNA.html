@@ -936,7 +936,7 @@ function calcResultat(){
 function calcAnglais(){
   const s=parseInt(state.anglais.score)||0;
   if(!s) return {score:s,pass:null};
-  return {score:s, pass:s>3};
+  return {score:s, pass:s>=3};
 }
 
 function calcATPL(){
@@ -1140,10 +1140,10 @@ function renderLabelDashboard(){
     <div class="lab-card-body">
       <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">
         <span style="font-size:13px;color:var(--slate)">Score :</span>
-        ${[1,2,3,4,5,6].map(n=>`<button onclick="state.anglais.score='${n}';renderTab(1)" style="width:34px;height:32px;border-radius:6px;border:1.5px solid ${state.anglais.score==n?(n<=3?'#C62828':'#1B5E20'):' var(--border)'};background:${state.anglais.score==n?(n<=3?'#C62828':'#1B5E20'):'#fff'};color:${state.anglais.score==n?'#fff':'var(--slate)'};font-size:13px;font-weight:600;cursor:pointer;transition:all .12s">${n}</button>`).join('')}
-        ${anglais.score?`<span style="font-size:12px;color:${anglais.pass?'#1B5E20':'#C62828'};font-weight:600">${anglais.pass?'Seuil : >3 ✔':'Seuil : >3 ✘'}</span>`:''}
+        ${[1,2,3,4,5,6].map(n=>`<button onclick="state.anglais.score='${n}';renderTab(1)" style="width:34px;height:32px;border-radius:6px;border:1.5px solid ${state.anglais.score==n?(n<3?'#C62828':'#1B5E20'):' var(--border)'};background:${state.anglais.score==n?(n<3?'#C62828':'#1B5E20'):'#fff'};color:${state.anglais.score==n?'#fff':'var(--slate)'};font-size:13px;font-weight:600;cursor:pointer;transition:all .12s">${n}</button>`).join('')}
+        ${anglais.score?`<span style="font-size:12px;color:${anglais.pass?'#1B5E20':'#C62828'};font-weight:600">${anglais.pass?'Seuil : >=3 ✔':'Seuil : <3 ✘'}</span>`:''}
       </div>
-      <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">Score ≤ 3 → FAIL | Score > 3 → PASS</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">Score < 3 → FAIL | Score >= 3 → PASS</div>
       <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px">Commentaires</div>
       <textarea placeholder="Commentaires sur le test d'anglais…" oninput="state.anglais.commentaire=this.value" style="width:100%;border:1px solid var(--border);border-radius:var(--radius);font-family:'Inter',sans-serif;font-size:12px;padding:8px;resize:vertical;min-height:55px;outline:none;color:var(--navy)">${state.anglais.commentaire||''}</textarea>
     </div>
@@ -1860,7 +1860,7 @@ function generatePDFLabel(){
       if(y>268){doc.addPage();y=M}
       let scoreStr='';
       if(failLabel==='Test Anglais'){
-        scoreStr=anglais.score?`Score : ${anglais.score}/6 -- seuil >3`:'Score non renseigne';
+        scoreStr=anglais.score?`Score : ${anglais.score}/6 -- seuil >=3`:'Score non renseigne';
       } else if(failLabel==='Questionnaire ATPL'){
         scoreStr=atpl.pct!==null?`Score : ${atpl.pct}% (${state.atpl.bonnes}/40) -- seuil >=75%`:'Score non renseigne';
       } else if(failLabel.startsWith('COMPASS')){
