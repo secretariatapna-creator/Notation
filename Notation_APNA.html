@@ -830,9 +830,9 @@ const COMPS=[
 ];
 
 const COMPASS_CATS=[
-  {id:'control',label:'CONTROL',threshold:1},
-  {id:'slalom',label:'SLALOM',threshold:2},
-  {id:'memory',label:'MEMORY',threshold:4},
+  {id:'control',label:'CONTROL',threshold:3},
+  {id:'slalom',label:'SLALOM',threshold:3},
+  {id:'memory',label:'MEMORY',threshold:3},
   {id:'math',label:'MATH',threshold:3},
   {id:'orientation',label:'ORIENTATION',threshold:3},
   {id:'taskmanager',label:'TASK MANAGER',threshold:3}
@@ -952,10 +952,10 @@ function calcCompass(){
   const allFilled=scores.every(s=>s.note>0);
   if(!allFilled) return {sum:0,pass:null,fails:[]};
   const sum=scores.reduce((a,s)=>a+s.note,0);
-  const fails=scores.filter(s=>s.note<=s.threshold);
-  // pass = true si total >= 22, même si des sous-sections sont sous seuil
-  // les sous-sections échouées remontent séparément dans calcLabelFinal
-  const pass=sum>=COMPASS_PASS_SUM;
+  const fails=scores.filter(s=>s.note<s.threshold);
+  // pass = total >= 22 ET chaque catégorie >= 3
+  // détail des catégories échouées dans calcLabelFinal
+  const pass=sum>=COMPASS_PASS_SUM && fails.length===0;
   return {sum,pass,fails};
 }
 
@@ -1000,7 +1000,7 @@ function calcLabelFinal(){
   const modules=[
     {key:'anglais',   label:'Test Anglais',        pass:anglais.pass,   failLabels:['Test Anglais']},
     {key:'atpl',      label:'Questionnaire ATPL',  pass:atpl.pass,      failLabels:['Questionnaire ATPL "Guide Pratique du pilote de ligne"']},
-    {key:'compass',   label:'COMPASS',             pass:compass.pass,   failLabels:['COMPASS (score total insuffisant)']},
+    {key:'compass',   label:'COMPASS',             pass:compass.pass,   failLabels:compass.sum<COMPASS_PASS_SUM?['COMPASS (score total insuffisant)']:[]},
     {key:'fnpt',      label:'FNPT',                pass:fnpt.pass,      failLabels:['FNPT']},
     {key:'entretien', label:'EPREUVES DE GROUPE/ENTRETIEN', pass:entretien.pass, failLabels:['EPREUVES DE GROUPE/ENTRETIEN']}
   ];
@@ -1164,7 +1164,7 @@ function renderLabelDashboard(){
 
   // COMPASS card — FAIL si sous-catégorie hors seuil, score total vert si >=22
   const compassSubFails=compass.fails&&compass.fails.length>0;
-  const compassBadgePass=compass.pass===null?null:(compassSubFails?false:true);
+  const compassBadgePass=compass.pass;
   const compassCard=`<div class="lab-card">
     <div class="lab-card-header"><div class="lab-card-icon">🧭</div><div class="lab-card-title">COMPASS</div>${passHtml(compassBadgePass)}</div>
     <div class="lab-card-body">
@@ -1253,14 +1253,14 @@ function openCompass(){
     const note=parseInt(state.compass[c.id])||0;
     const noteBtns=[1,2,3,4,5,6,7].map(n=>{
       const isActive=note===n;
-      const isFail=isActive&&n<=c.threshold;
+      const isFail=isActive&&n<c.threshold;
       return `<button class="compass-note-btn${isFail?' fail-active':isActive?' active':''}" onclick="tmpCompass['${c.id}']=${n};refreshCompassBody()">${n}</button>`;
     }).join(' ');
     return `<tr>
-      <td style="font-weight:600;font-family:'Barlow Condensed',sans-serif">${c.label}<span class="threshold-tag">seuil>${c.threshold}</span></td>
+      <td style="font-weight:600;font-family:'Barlow Condensed',sans-serif">${c.label}<span class="threshold-tag">seuil≥${c.threshold}</span></td>
       <td>${noteBtns}</td>
-      <td>${note?`<span style="font-size:13px;font-weight:700;color:${note>c.threshold?'#1B5E20':'#C62828'}">${note>c.threshold?'✔':'✘'}</span>`:'—'}</td>
-    </tr>`;
+      <td>${note?`<span style="font-size:13px;font-weight:700;color:${note>=c.threshold?'#1B5E20':'#C62828'}">${note>=c.threshold?'✔':'✘'}</span>`:'—'}</td>
+      </tr>`;
   }).join('');
 
   const {sum,pass,fails}=calcCompassTmp();
@@ -1819,7 +1819,7 @@ function generatePDFLabel(){
   drawEpreuve('Questionnaire ATPL', atpl.pct!==null?`${atpl.pct}% (${state.atpl.bonnes}/40)`:null, atpl.pass, '');
 
   const compassComment=compass.fails&&compass.fails.length
-    ? `Sous seuil : ${compass.fails.map(f=>`${f.label} (note ${parseInt(state.compass[f.id])||0}, seuil >${f.threshold})`).join(', ')}`
+    ? `Sous seuil : ${compass.fails.map(f=>`${f.label} (note ${parseInt(state.compass[f.id])||0}, seuil >=${f.threshold})`).join(', ')}`
     : '';
   drawEpreuve('COMPASS', compass.sum?`Total : ${compass.sum}/42`:null, compass.pass, compassComment);
   drawEpreuve('FNPT', fnpt.avg!==null?`Moyenne : ${fnpt.avg}/5`:null, fnpt.pass, state.fnpt.commentaire||'');
@@ -1870,7 +1870,7 @@ function generatePDFLabel(){
         const cat=COMPASS_CATS.find(c=>c.label===catName);
         if(cat){
           const note=parseInt(state.compass[cat.id])||0;
-          scoreStr=`Score ${cat.label} : ${note}/7 -- seuil >${cat.threshold} -- a retravailler`;
+          scoreStr=`Score ${cat.label} : ${note}/7 -- seuil >=${cat.threshold} -- a retravailler`;
         } else {
           scoreStr=compass.sum?`Total : ${compass.sum}/42 -- seuil >=22`:'Score non renseigne';
         }
