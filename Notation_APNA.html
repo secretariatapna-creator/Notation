@@ -1831,8 +1831,10 @@ function generatePDFLabel(){
   if(y>262){doc.addPage();y=M}
   const labelRes=calcLabelFinal();
   const lCol=labelRes.status==='labellise'?green:labelRes.status==='non-labellise'?red:slate;
-  drawRect(M,y,CW,18,3,lCol);
-  txt(labelRes.status==='labellise'?'LABELLISE':labelRes.status==='non-labellise'?'NON LABELLISE':'EN ATTENTE',W/2,y+11,14,[255,255,255],'bold','center');
+  const isNonLab=labelRes.status==='non-labellise';
+  drawRect(M,y,CW,18,3,isNonLab?[255,235,238]:lCol);
+  if(isNonLab){doc.setDrawColor(...red);doc.setLineWidth(.5);doc.roundedRect(M,y,CW,18,3,3,'S');}
+  txt(labelRes.status==='labellise'?'LABELLISE':isNonLab?'NON LABELLISE':'EN ATTENTE',W/2,y+11,14,isNonLab?red:[255,255,255],'bold','center');
   y+=24;
 
   // Section remediation si non labellise
