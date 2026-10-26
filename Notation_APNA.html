@@ -998,7 +998,7 @@ function calcLabelFinal(){
     : [];
 
   const modules=[
-    {key:'anglais',   label:'Test Anglais',        pass:anglais.pass,   failLabels:['Test Anglais']},
+    {key:'anglais',   label:'Anglais',        pass:anglais.pass,   failLabels:['Anglais']},
     {key:'atpl',      label:'Questionnaire ATPL',  pass:atpl.pass,      failLabels:['Questionnaire ATPL "Guide Pratique du pilote de ligne"']},
     {key:'compass',   label:'COMPASS',             pass:compass.pass,   failLabels:compass.sum<COMPASS_PASS_SUM?['COMPASS (score total insuffisant)']:[]},
     {key:'fnpt',      label:'FNPT',                pass:fnpt.pass,      failLabels:['FNPT']},
@@ -1136,7 +1136,7 @@ function renderLabelDashboard(){
 
   // Anglais card
   const anglaisCard=`<div class="lab-card">
-    <div class="lab-card-header"><div class="lab-card-icon">🇬🇧</div><div class="lab-card-title">Test Anglais</div>${passHtml(anglais.pass)}</div>
+    <div class="lab-card-header"><div class="lab-card-icon">🇬🇧</div><div class="lab-card-title">Anglais</div>${passHtml(anglais.pass)}</div>
     <div class="lab-card-body">
       <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">
         <span style="font-size:13px;color:var(--slate)">Score :</span>
@@ -1815,7 +1815,7 @@ function generatePDFLabel(){
     }
   };
 
-  drawEpreuve('Test Anglais', anglais.score?`Score : ${anglais.score}/6`:null, anglais.pass, state.anglais.commentaire||'');
+  drawEpreuve('Anglais', anglais.score?`Score : ${anglais.score}/6`:null, anglais.pass, state.anglais.commentaire||'');
   drawEpreuve('Questionnaire ATPL', atpl.pct!==null?`${atpl.pct}% (${state.atpl.bonnes}/40)`:null, atpl.pass, '');
 
   const compassComment=compass.fails&&compass.fails.length
@@ -1861,7 +1861,7 @@ function generatePDFLabel(){
     labelRes.fails.forEach(failLabel=>{
       if(y>268){doc.addPage();y=M}
       let scoreStr='';
-      if(failLabel==='Test Anglais'){
+      if(failLabel==='Anglais'){
         scoreStr=anglais.score?`Score : ${anglais.score}/6 -- seuil >=3`:'Score non renseigne';
       } else if(failLabel==='Questionnaire ATPL'){
         scoreStr=atpl.pct!==null?`Score : ${atpl.pct}% (${state.atpl.bonnes}/40) -- seuil >=75%`:'Score non renseigne';
