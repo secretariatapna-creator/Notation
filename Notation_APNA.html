@@ -1763,10 +1763,10 @@ function generatePDFLabel(){
 
   // Header
   drawRect(M,y,CW,20,3,navy);
-  txt('APNA',M+6,y+7.5,14,[255,255,255],'bold');
-  txt("ASSOCIATION DES PROFESSIONNELS NAVIGANTS DE L'AVIATION",M+22,y+5.5,7,[200,220,255],'normal');
-  txt('FICHE DE LABELLISATION',M+22,y+11,10,[255,255,255],'bold');
-  txt(new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'}),W-M,y+14,8,[180,210,255],'normal','right');
+  txt('APNA',M+6,y+6.5,9,[255,255,255],'bold');
+  txt("ASSOCIATION DES PROFESSIONNELS NAVIGANTS DE L'AVIATION",M+17,y+6.5,6.5,[200,220,255],'normal');
+  txt(new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'}),W-M-6,y+6.5,8,[180,210,255],'normal','right');
+  txt('FICHE DE LABELLISATION',M+6,y+16,17,[255,255,255],'bold');
   y+=26;
 
   // Identity — hauteur dynamique
