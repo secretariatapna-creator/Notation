@@ -1762,12 +1762,15 @@ function generatePDFLabel(){
   const txt=(t,x,yy,sz,col,style,align)=>{doc.setFontSize(sz);doc.setTextColor(...col);doc.setFont('helvetica',style||'normal');doc.text(String(t),x,yy,{align:align||'left'})};
 
   // Header
-  drawRect(M,y,CW,20,3,navy);
+  drawRect(M,y,CW,30,3,navy);
   txt('APNA',M+6,y+6.5,9,[255,255,255],'bold');
   txt("ASSOCIATION DES PROFESSIONNELS NAVIGANTS DE L'AVIATION",M+17,y+6.5,6.5,[200,220,255],'normal');
   txt(new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'}),W-M-6,y+6.5,8,[180,210,255],'normal','right');
-  txt('FICHE DE LABELLISATION',M+6,y+16,17,[255,255,255],'bold');
-  y+=26;
+  // Titre ajusté pour occuper presque toute la largeur du bandeau
+  doc.setFont('helvetica','bold');doc.setFontSize(10);
+  const titleSize=Math.floor(10*(CW-12)/doc.getTextWidth('FICHE DE LABELLISATION'));
+  txt('FICHE DE LABELLISATION',W/2,y+25,titleSize,[255,255,255],'bold','center');
+  y+=36;
 
   // Identity — hauteur dynamique
   const details=[];
@@ -1870,7 +1873,7 @@ function generatePDFLabel(){
         const cat=COMPASS_CATS.find(c=>c.label===catName);
         if(cat){
           const note=parseInt(state.compass[cat.id])||0;
-          scoreStr=`Score ${cat.label} : ${note}/7 -- seuil >=${cat.threshold} -- a retravailler`;
+          scoreStr=`Score ${cat.label} : ${note}/7 -- seuil >=${cat.threshold}`;
         } else {
           scoreStr=compass.sum?`Total : ${compass.sum}/42 -- seuil >=22`:'Score non renseigne';
         }
