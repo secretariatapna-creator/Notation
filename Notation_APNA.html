@@ -1858,17 +1858,12 @@ function generatePDFLabel(){
       y+=27;
     }
 
-    if(y>258){doc.addPage();y=M}
-    drawRect(M,y,CW,10,2,[238,240,243]);
-    txt('ELEMENTS A RETRAVAILLER',M+5,y+7,9,navy,'bold');
-    y+=14;
-
-    labelRes.fails.forEach(failLabel=>{
-      if(y>268){doc.addPage();y=M}
+    // Elements a retravailler : un seul grand cadre
+    const items=labelRes.fails.map(failLabel=>{
       let scoreStr='';
       if(failLabel==='Anglais'){
         scoreStr=anglais.score?`Score : ${anglais.score}/6 -- seuil >=3`:'Score non renseigne';
-      } else if(failLabel==='Questionnaire ATPL'){
+      } else if(failLabel.startsWith('Questionnaire ATPL')){
         scoreStr=atpl.pct!==null?`Score : ${atpl.pct}% (${state.atpl.bonnes}/40) -- seuil >=75%`:'Score non renseigne';
       } else if(failLabel.startsWith('COMPASS')){
         const catName=failLabel.split(':')[1]?failLabel.split(':')[1].trim():'';
@@ -1884,25 +1879,33 @@ function generatePDFLabel(){
       } else if(failLabel==='EPREUVES DE GROUPE/ENTRETIEN'){
         scoreStr=entretien.score!==null?`Score : ${entretien.score}, Avis : ${entretien.resultat} -- seuil RF ou F`:'Score non renseigne';
       }
-      drawRect(M,y,CW,9,1,[238,240,243]);
-      doc.setDrawColor(176,186,197);doc.setLineWidth(.3);doc.roundedRect(M,y,CW,9,1,1,'S');
-      const fullLabel=`INSUFFISANT : ${failLabel}`;
-      txt(fullLabel,M+5,y+6,8,navy,'bold');
-      txt(scoreStr,M+5+Math.min(doc.getTextWidth(fullLabel)+6,80),y+6,7,slate,'normal');
-      y+=12;
       // Commentaires instructeur pour FNPT et EPREUVES DE GROUPE/ENTRETIEN
       const comment=(failLabel==='FNPT'&&state.fnpt.commentaire)
         ? state.fnpt.commentaire
         : (failLabel==='EPREUVES DE GROUPE/ENTRETIEN'&&state.entretien.commentaires)
           ? state.entretien.commentaires
           : '';
-      if(comment){
-        if(y>270){doc.addPage();y=M}
-        const commentLines=doc.splitTextToSize(`  Commentaire : ${comment}`,CW-10);
+      doc.setFontSize(7.5);doc.setFont('helvetica','italic');
+      const commentLines=comment?doc.splitTextToSize(`Commentaire : ${comment}`,CW-16):[];
+      return {failLabel,scoreStr,commentLines};
+    });
+    const boxH=14+items.reduce((a,it)=>a+7+it.commentLines.length*4.5,0)+2;
+    if(y+boxH>280){doc.addPage();y=M}
+    drawRect(M,y,CW,boxH,2,[238,240,243]);
+    doc.setDrawColor(176,186,197);doc.setLineWidth(.3);doc.roundedRect(M,y,CW,boxH,2,2,'S');
+    txt('ELEMENTS A RETRAVAILLER',M+5,y+7,9,navy,'bold');
+    doc.line(M+5,y+10,W-M-5,y+10);
+    y+=16;
+    items.forEach(it=>{
+      const lbl=`- ${it.failLabel}`;
+      txt(lbl,M+5,y,8,navy,'bold');
+      txt(it.scoreStr,M+5+Math.min(doc.getTextWidth(lbl)+6,80),y,7,slate,'normal');
+      y+=5;
+      if(it.commentLines.length){
         doc.setFontSize(7.5);doc.setTextColor(...slate);doc.setFont('helvetica','italic');
-        commentLines.forEach(l=>{if(y>274){doc.addPage();y=M}doc.text(l,M+5,y);y+=4.5});
-        y+=3;
+        it.commentLines.forEach(l=>{doc.text(l,M+9,y);y+=4.5});
       }
+      y+=2;
     });
   }
 
