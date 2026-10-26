@@ -1123,7 +1123,7 @@ function renderEval(){
 ══════════════════════════════════════════════════════ */
 function passHtml(passVal){
   if(passVal===null) return '<span class="pass-badge pending">—</span>';
-  return passVal?'<span class="pass-badge pass">✔ PASS</span>':'<span class="pass-badge fail">✘ FAIL</span>';
+  return passVal?'<span class="pass-badge pass">✔ PASS</span>':'<span class="pass-badge fail">✘ INSUFFISANT</span>';
 }
 
 function renderLabelDashboard(){
@@ -1143,7 +1143,7 @@ function renderLabelDashboard(){
         ${[1,2,3,4,5,6].map(n=>`<button onclick="state.anglais.score='${n}';renderTab(1)" style="width:34px;height:32px;border-radius:6px;border:1.5px solid ${state.anglais.score==n?(n<3?'#C62828':'#1B5E20'):' var(--border)'};background:${state.anglais.score==n?(n<3?'#C62828':'#1B5E20'):'#fff'};color:${state.anglais.score==n?'#fff':'var(--slate)'};font-size:13px;font-weight:600;cursor:pointer;transition:all .12s">${n}</button>`).join('')}
         ${anglais.score?`<span style="font-size:12px;color:${anglais.pass?'#1B5E20':'#C62828'};font-weight:600">${anglais.pass?'Seuil : >=3 ✔':'Seuil : <3 ✘'}</span>`:''}
       </div>
-      <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">Score < 3 → FAIL | Score >= 3 → PASS</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">Score < 3 → INSUFFISANT | Score >= 3 → PASS</div>
       <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px">Commentaires</div>
       <textarea placeholder="Commentaires sur l'anglais…" oninput="state.anglais.commentaire=this.value" style="width:100%;border:1px solid var(--border);border-radius:var(--radius);font-family:'Inter',sans-serif;font-size:12px;padding:8px;resize:vertical;min-height:55px;outline:none;color:var(--navy)">${state.anglais.commentaire||''}</textarea>
     </div>
@@ -1162,7 +1162,7 @@ function renderLabelDashboard(){
     </div>
   </div>`;
 
-  // COMPASS card — FAIL si sous-catégorie hors seuil, score total vert si >=22
+  // COMPASS card — INSUFFISANT si sous-catégorie hors seuil, score total vert si >=22
   const compassSubFails=compass.fails&&compass.fails.length>0;
   const compassBadgePass=compass.pass;
   const compassCard=`<div class="lab-card">
@@ -1187,7 +1187,7 @@ function renderLabelDashboard(){
   const entretienCard=`<div class="lab-card">
     <div class="lab-card-header"><div class="lab-card-icon">🎤</div><div class="lab-card-title">ÉPREUVES DE GROUPE/ENTRETIEN</div>${passHtml(entretien.pass)}</div>
     <div class="lab-card-body">
-      ${entretien.resultat?`<div style="font-size:13px;margin-bottom:6px">Résultat : <strong>${entretien.resultat}</strong> — ${entretien.pass?'RF ou F → PASS ✔':'D ou RD → FAIL ✘'}</div>`:''}
+      ${entretien.resultat?`<div style="font-size:13px;margin-bottom:6px">Résultat : <strong>${entretien.resultat}</strong> — ${entretien.pass?'RF ou F → PASS ✔':'D ou RD → INSUFFISANT ✘'}</div>`:''}
       ${entretien.score!==null?`<div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">Score : ${entretien.score}/700</div>`:''}
       ${!entretien.pass&&entretien.pass!==null&&state.entretien.commentaires?`<div style="font-size:12px;color:#0A2342;padding:6px 8px;background:#EEF0F3;border-radius:4px;margin-bottom:6px">💬 ${state.entretien.commentaires}</div>`:''}
       <button class="lab-open-btn" onclick="openEntretien()">📝 Remplir les épreuves de groupe/entretien</button>
@@ -1222,7 +1222,7 @@ function renderLabelDashboard(){
     const lr=state.labelRemediation;
     remediationBlock=`<div style="margin-top:12px;padding:14px 18px;border-radius:var(--radius-lg);border:2px solid #B0BAC5;background:#EEF0F3;display:flex;align-items:center;gap:16px">
       <div style="font-size:13px;font-weight:600;color:#0A2342;flex:1">⚕️ Accès à la remédiation labellisation <br>
-        Remédiation : les étapes FAIL sont à consolider par un travail personnel ou/et accompagné (voir le détail des rubriques ci-dessus). <br>
+        Remédiation : les étapes INSUFFISANTES sont à consolider par un travail personnel ou/et accompagné (voir le détail des rubriques ci-dessus). <br>
         Se rapprocher de l’APNA pour l’organisation. <br>
         Un délai de 6 mois est prescrit avant une deuxième présentation à ces étapes.</div>
       <div style="display:flex;gap:10px">
@@ -1264,7 +1264,7 @@ function openCompass(){
   }).join('');
 
   const {sum,pass,fails}=calcCompassTmp();
-  const sumRow=sum?`<tr style="background:#F7F9FC;font-weight:600"><td colspan="2">Total : ${sum} / 42 ${sum>=COMPASS_PASS_SUM?'✔':'✘ (seuil ≥22)'}</td><td>${pass!==null?(pass?'<span style="color:#1B5E20">PASS</span>':'<span style="color:#C62828">FAIL</span>'):'—'}</td></tr>`:'';
+  const sumRow=sum?`<tr style="background:#F7F9FC;font-weight:600"><td colspan="2">Total : ${sum} / 42 ${sum>=COMPASS_PASS_SUM?'✔':'✘ (seuil ≥22)'}</td><td>${pass!==null?(pass?'<span style="color:#1B5E20">PASS</span>':'<span style="color:#C62828">INSUFFISANT</span>'):'—'}</td></tr>`:'';
 
   document.getElementById('compass-body').innerHTML=`
     <table class="compass-table">
@@ -1329,7 +1329,7 @@ function openFNPT(){
   const {avg,pass,evaluated}=calcFNPT();
   html+=`<tr style="background:#F7F9FC">
     <td colspan="2" style="font-weight:600">Moyenne (${evaluated||0} compétences évaluées — seuil ≥ 3)</td>
-    <td style="font-weight:700;color:${pass===null?'var(--text-muted)':pass?'#1B5E20':'#C62828'}">${avg!==null?avg+'/5   '+(pass?'✔ PASS':'✘ FAIL'):'—'}</td>
+    <td style="font-weight:700;color:${pass===null?'var(--text-muted)':pass?'#1B5E20':'#C62828'}">${avg!==null?avg+'/5   '+(pass?'✔ PASS':'✘ INSUFFISANT'):'—'}</td>
   </tr>`;
   html+=`</tbody></table></div>`;
 
@@ -1438,7 +1438,7 @@ function openEntretien(){
   const rLabels={D:'Défavorable',RD:'Réservé Défavorable',RF:'Réservé Favorable',F:'Favorable'};
   const resHtml=resultat?`<div style="margin-top:10px;padding:12px 16px;border-radius:var(--radius);border:2px solid ${resultat==='D'?'#B0BAC5':rColors[resultat]};background:${resultat==='D'?'#EEF0F3':resultat==='RD'?'#FFF3E0':resultat==='RF'?'#E8F2FF':'#E8F5E9'}">
     <span style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:${resultat==='D'?'#0A2342':rColors[resultat]}">${resultat} — ${rLabels[resultat]}</span>
-    <span style="margin-left:12px;font-size:13px;color:${pass?'#1B5E20':'#0A2342'};font-weight:600">${pass?'✔ PASS (RF ou F)':'✘ FAIL (D ou RD)'}</span>
+    <span style="margin-left:12px;font-size:13px;color:${pass?'#1B5E20':'#0A2342'};font-weight:600">${pass?'✔ PASS (RF ou F)':'✘ INSUFFISANT (D ou RD)'}</span>
   </div>`:'';
 
   html+=`<div class="avis-section" style="margin-top:10px">
@@ -1808,7 +1808,7 @@ function generatePDFLabel(){
     drawRect(M,y,CW,12,2,bgCol);
     txt(label,M+5,y+8,9,navy,'bold');
     if(val)txt(val,M+80,y+8,8,slate,'normal');
-    txt(pass===null?'--':pass?'PASS':'FAIL',W-M-5,y+8,9,pCol,'bold','right');
+    txt(pass===null?'--':pass?'PASS':'INSUFFISANT',W-M-5,y+8,9,pCol,'bold','right');
     y+=14;
     if(comment&&comment.trim()){
       if(y>268){doc.addPage();y=M}
@@ -1851,7 +1851,7 @@ function generatePDFLabel(){
       drawRect(M,y,CW,22,2,remOui?remCol.map(v=>Math.min(255,v+185)):[238,240,243]);
       doc.setDrawColor(...(remOui?remCol:[176,186,197]));doc.setLineWidth(.5);doc.roundedRect(M,y,CW,22,2,2,'S');
       txt('Acces a la remediation :',M+5,y+7.5,8,remCol,'normal');
-      txt("Remédiation :  les étapes FAIL sont à consolider par un travail personnel ou/et accompagné (voir le détail des rubriques ci-dessous).", M+5,y+11.5,8,remCol,'normal');
+      txt("Remédiation :  les étapes INSUFFISANTES sont à consolider par un travail personnel ou/et accompagné (voir le détail des rubriques ci-dessous).", M+5,y+11.5,7.5,remCol,'normal');
       txt("Se rapprocher de l'APNA pour l'organisation.", M+5,y+15.5,8,remCol,'normal');
       txt("Un délai de 6 mois est prescrit avant une deuxième présentation à ces étapes.", M+5,y+19.5,8,remCol,'normal');
       txt(state.labelRemediation==='oui'?'OUI':'NON',M+64,y+7.5,8,remCol,'bold');
@@ -1886,7 +1886,7 @@ function generatePDFLabel(){
       }
       drawRect(M,y,CW,9,1,[238,240,243]);
       doc.setDrawColor(176,186,197);doc.setLineWidth(.3);doc.roundedRect(M,y,CW,9,1,1,'S');
-      const fullLabel=`FAIL : ${failLabel}`;
+      const fullLabel=`INSUFFISANT : ${failLabel}`;
       txt(fullLabel,M+5,y+6,8,navy,'bold');
       txt(scoreStr,M+5+Math.min(doc.getTextWidth(fullLabel)+6,80),y+6,7,slate,'normal');
       y+=12;
