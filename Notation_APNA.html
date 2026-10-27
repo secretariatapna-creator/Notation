@@ -987,6 +987,22 @@ function calcEntretien(){
   return {score,resultat,pass};
 }
 
+// Remédiation labellisation : à partir de 3 épreuves insuffisantes, accès refusé
+// et délai d'un an pour repasser l'ensemble des épreuves
+const REMEDIATION_MAX_FAILS=3;
+// Délai avant nouvelle présentation d'une épreuve insuffisante
+function remediationDelai(failLabel){
+  return (failLabel.startsWith('COMPASS')||failLabel==='FNPT')?'2 mois':'6 mois';
+}
+// Nom court de l'épreuve, pour regrouper les sous-catégories COMPASS
+function remediationEpreuve(failLabel){
+  if(failLabel.startsWith('COMPASS')) return 'COMPASS';
+  if(failLabel.startsWith('Questionnaire ATPL')) return 'Questionnaire ATPL';
+  if(failLabel==='FNPT') return 'FNPT (simulateur)';
+  if(failLabel==='EPREUVES DE GROUPE/ENTRETIEN') return 'Épreuves de groupe/entretien';
+  return failLabel;
+}
+
 function calcLabelFinal(){
   const anglais=calcAnglais();
   const atpl=calcATPL();
@@ -1018,7 +1034,7 @@ function calcLabelFinal(){
   ];
 
   if(allFails.length>0){
-    return {status:'non-labellise', fails:allFails};
+    return {status:'non-labellise', fails:allFails, failCount:failedModules.length};
   }
   if(filled.length===modules.length) return {status:'labellise', fails:[]};
   return {status:'pending', fails:[]};
@@ -1221,16 +1237,23 @@ function renderLabelDashboard(){
   // Remédiation — uniquement si non labellisé
   let remediationBlock='';
   if(label.status==='non-labellise'){
-    const lr=state.labelRemediation;
+    const forcedNon=label.failCount>=REMEDIATION_MAX_FAILS;
+    const lr=forcedNon?'non':state.labelRemediation;
+    const delais=[...new Map(label.fails.map(f=>[remediationEpreuve(f),remediationDelai(f)])).entries()];
     remediationBlock=`<div style="margin-top:12px;padding:14px 18px;border-radius:var(--radius-lg);border:2px solid ${lr==='non'?'#B0BAC5':'#E65100'};background:${lr==='non'?'#EEF0F3':'#FFF8F5'};display:flex;align-items:center;gap:16px">
       <div style="font-size:13px;font-weight:600;color:${lr==='non'?'#0A2342':'#B71C1C'};flex:1">⚕️ Accès à la remédiation labellisation <br>
         Remédiation : les étapes INSUFFISANTES sont à consolider par un travail personnel ou/et accompagné (voir le détail des rubriques ci-dessus). <br>
-        Se rapprocher de l’APNA pour l’organisation. <br>
-        Un délai de 6 mois est prescrit avant une deuxième présentation à ces étapes.</div>
-      <div style="display:flex;gap:10px">
+        ${forcedNon
+          ? `Se rapprocher de l’APNA pour l’organisation. <br>
+        Un délai de 1 an est prescrit pour repasser l’ensemble des épreuves de la labellisation.`
+          : `Se rapprocher de l’APNA pour l’organisation, voir les délais ci-dessous pour une nouvelle présentation.
+        <div style="margin-top:6px;font-weight:500">${delais.map(([e,d])=>`• ${e} : nouvelle présentation dans ${d}`).join('<br>')}</div>`}</div>
+      ${forcedNon
+        ? `<div style="text-align:center;font-size:12px;color:#0A2342"><span style="display:inline-block;padding:6px 14px;border-radius:var(--radius);border:1.5px solid #B0BAC5;background:#fff;font-size:13px;font-weight:600">✘ Non</span><br><span style="font-size:11px;color:var(--text-muted)">${label.failCount} épreuves insuffisantes</span></div>`
+        : `<div style="display:flex;gap:10px">
         <button type="button" style="padding:6px 14px;border-radius:var(--radius);border:1.5px solid ${lr==='oui'?'#2E7D32':'var(--border)'};background:${lr==='oui'?'#E8F5E9':'#fff'};color:${lr==='oui'?'#1B5E20':'var(--slate)'};font-size:13px;font-weight:500;cursor:pointer" onclick="state.labelRemediation='oui';renderTab(1)">✔ Oui</button>
         <button type="button" style="padding:6px 14px;border-radius:var(--radius);border:1.5px solid ${lr==='non'?'#C62828':'var(--border)'};background:${lr==='non'?'#FFEBEE':'#fff'};color:${lr==='non'?'#C62828':'var(--slate)'};font-size:13px;font-weight:500;cursor:pointer" onclick="state.labelRemediation='non';renderTab(1)">✘ Non</button>
-      </div>
+      </div>`}
     </div>`;
   }
 
@@ -1850,17 +1873,24 @@ function generatePDFLabel(){
   if(labelRes.status==='non-labellise'){
     if(y>258){doc.addPage();y=M}
 
-    if(state.labelRemediation){
-      const remOui=state.labelRemediation==='oui';
+    const forcedNon=labelRes.failCount>=REMEDIATION_MAX_FAILS;
+    const remVal=forcedNon?'non':state.labelRemediation;
+    if(remVal){
+      const remOui=remVal==='oui';
       const remCol=remOui?green:navy;
-      drawRect(M,y,CW,22,2,remOui?remCol.map(v=>Math.min(255,v+185)):[238,240,243]);
-      doc.setDrawColor(...(remOui?remCol:[176,186,197]));doc.setLineWidth(.5);doc.roundedRect(M,y,CW,22,2,2,'S');
+      const remH=forcedNon?22:18;
+      drawRect(M,y,CW,remH,2,remOui?remCol.map(v=>Math.min(255,v+185)):[238,240,243]);
+      doc.setDrawColor(...(remOui?remCol:[176,186,197]));doc.setLineWidth(.5);doc.roundedRect(M,y,CW,remH,2,2,'S');
       txt('Acces a la remediation :',M+5,y+7.5,8,remCol,'normal');
       txt("Remédiation :  les étapes INSUFFISANTES sont à consolider par un travail personnel ou/et accompagné (voir le détail des rubriques ci-dessous).", M+5,y+11.5,7.5,remCol,'normal');
-      txt("Se rapprocher de l'APNA pour l'organisation.", M+5,y+15.5,8,remCol,'normal');
-      txt("Un délai de 6 mois est prescrit avant une deuxième présentation à ces étapes.", M+5,y+19.5,8,remCol,'normal');
-      txt(state.labelRemediation==='oui'?'OUI':'NON',M+64,y+7.5,8,remCol,'bold');
-      y+=27;
+      if(forcedNon){
+        txt("Se rapprocher de l'APNA pour l'organisation.", M+5,y+15.5,8,remCol,'normal');
+        txt("Un délai de 1 an est prescrit pour repasser l'ensemble des épreuves de la labellisation.", M+5,y+19.5,8,remCol,'bold');
+      } else {
+        txt("Se rapprocher de l'APNA pour l'organisation, voir les délais ci-dessous pour une nouvelle présentation.", M+5,y+15.5,8,remCol,'normal');
+      }
+      txt(remOui?'OUI':'NON',M+64,y+7.5,8,remCol,'bold');
+      y+=remH+5;
     }
 
     // Elements a retravailler : un seul grand cadre
@@ -1904,7 +1934,8 @@ function generatePDFLabel(){
     items.forEach(it=>{
       const lbl=`- ${it.failLabel}`;
       txt(lbl,M+5,y,8,navy,'bold');
-      txt(it.scoreStr,M+5+Math.min(doc.getTextWidth(lbl)+6,80),y,7,slate,'normal');
+      const detail=forcedNon?it.scoreStr:`${it.scoreStr} -- nouvelle presentation dans ${remediationDelai(it.failLabel)}`;
+      txt(detail,M+5+Math.min(doc.getTextWidth(lbl)+6,80),y,7,slate,'normal');
       y+=5;
       if(it.commentLines.length){
         doc.setFontSize(7.5);doc.setTextColor(...slate);doc.setFont('helvetica','italic');
