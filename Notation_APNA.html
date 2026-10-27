@@ -1850,10 +1850,7 @@ function generatePDFLabel(){
   drawEpreuve('Anglais', anglais.score?`Score : ${anglais.score}/6`:null, anglais.pass, state.anglais.commentaire||'');
   drawEpreuve('Questionnaire ATPL', atpl.pct!==null?`${atpl.pct}% (${state.atpl.bonnes}/40)`:null, atpl.pass, '');
 
-  const compassComment=compass.fails&&compass.fails.length
-    ? `Sous seuil : ${compass.fails.map(f=>`${f.label} (note ${parseInt(state.compass[f.id])||0}, seuil >=${f.threshold})`).join(', ')}`
-    : '';
-  drawEpreuve('COMPASS', compass.sum?`Total : ${compass.sum}/42`:null, compass.pass, compassComment);
+  drawEpreuve('COMPASS', compass.sum?`Total : ${compass.sum}/42`:null, compass.pass, '');
   drawEpreuve('FNPT', fnpt.avg!==null?`Moyenne : ${fnpt.avg}/5`:null, fnpt.pass, state.fnpt.commentaire||'');
   drawEpreuve('EPREUVES DE GROUPE/ENTRETIEN', entretien.resultat?`Avis : ${entretien.resultat} - Score : ${entretien.score}`:null, entretien.pass, state.entretien.commentaires||'');
 
@@ -1881,7 +1878,7 @@ function generatePDFLabel(){
       const remH=forcedNon?22:18;
       drawRect(M,y,CW,remH,2,remOui?remCol.map(v=>Math.min(255,v+185)):[238,240,243]);
       doc.setDrawColor(...(remOui?remCol:[176,186,197]));doc.setLineWidth(.5);doc.roundedRect(M,y,CW,remH,2,2,'S');
-      txt('Acces a la remediation :',M+5,y+7.5,8,remCol,'normal');
+      txt('Accès à la remédiation :',M+5,y+7.5,8,remCol,'normal');
       txt("Remédiation :  les étapes INSUFFISANTES sont à consolider par un travail personnel ou/et accompagné (voir le détail des rubriques ci-dessous).", M+5,y+11.5,7.5,remCol,'normal');
       if(forcedNon){
         txt("Se rapprocher de l'APNA pour l'organisation.", M+5,y+15.5,8,remCol,'normal');
