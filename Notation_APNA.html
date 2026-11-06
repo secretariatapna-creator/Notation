@@ -1919,9 +1919,12 @@ function generatePDFLabel(){
     // COMPASS : une seule entrée, avec un sous-point par catégorie insuffisante
     const compassItems=items.filter(it=>it.failLabel.startsWith('COMPASS'));
     if(compassItems.length){
-      const grouped={failLabel:'COMPASS',scoreStr:'',commentLines:[],
-        subLines:compassItems.map(it=>'- '+it.scoreStr.replace(/^Score /,''))};
-      items.splice(items.indexOf(compassItems[0]),compassItems.length,grouped);
+      // Total sur la ligne COMPASS, détail des sujets insuffisants en dessous
+      const grouped={failLabel:'COMPASS',scoreStr:compass.sum?`Total : ${compass.sum}/42 -- seuil >=22`:'',commentLines:[],
+        subLines:compassItems.filter(it=>it.failLabel.includes(':')).map(it=>'- '+it.scoreStr.replace(/^Score /,''))};
+      const pos=items.indexOf(compassItems[0]);
+      items.splice(0,items.length,...items.filter(it=>!compassItems.includes(it)));
+      items.splice(pos,0,grouped);
     }
     const boxH=14+items.reduce((a,it)=>a+7+(it.subLines.length+it.commentLines.length)*4.5,0)+2;
     if(y+boxH>280){doc.addPage();y=M}
