@@ -1919,9 +1919,16 @@ function generatePDFLabel(){
           : '';
       doc.setFontSize(7.5);doc.setFont('helvetica','italic');
       const commentLines=comment?doc.splitTextToSize(`Commentaire : ${comment}`,CW-16):[];
-      return {failLabel,scoreStr,commentLines};
+      return {failLabel,scoreStr,commentLines,subLines:[]};
     });
-    const boxH=14+items.reduce((a,it)=>a+7+it.commentLines.length*4.5,0)+2;
+    // COMPASS : une seule entrée, avec un sous-point par catégorie insuffisante
+    const compassItems=items.filter(it=>it.failLabel.startsWith('COMPASS'));
+    if(compassItems.length){
+      const grouped={failLabel:'COMPASS',scoreStr:'',commentLines:[],
+        subLines:compassItems.map(it=>'- '+it.scoreStr.replace(/^Score /,''))};
+      items.splice(items.indexOf(compassItems[0]),compassItems.length,grouped);
+    }
+    const boxH=14+items.reduce((a,it)=>a+7+(it.subLines.length+it.commentLines.length)*4.5,0)+2;
     if(y+boxH>280){doc.addPage();y=M}
     drawRect(M,y,CW,boxH,2,[253,226,200]);
     doc.setDrawColor(242,185,138);doc.setLineWidth(.3);doc.roundedRect(M,y,CW,boxH,2,2,'S');
@@ -1931,9 +1938,11 @@ function generatePDFLabel(){
     items.forEach(it=>{
       const lbl=`- ${it.failLabel}`;
       txt(lbl,M+5,y,8,navy,'bold');
-      const detail=forcedNon?it.scoreStr:`${it.scoreStr} -- nouvelle presentation dans ${remediationDelai(it.failLabel)}`;
+      const delai=forcedNon?'':`nouvelle presentation dans ${remediationDelai(it.failLabel)}`;
+      const detail=[it.scoreStr,delai].filter(Boolean).join(' -- ');
       txt(detail,M+5+Math.min(doc.getTextWidth(lbl)+6,80),y,7,slate,'normal');
       y+=5;
+      it.subLines.forEach(l=>{txt(l,M+12,y,7.5,slate,'normal');y+=4.5});
       if(it.commentLines.length){
         doc.setFontSize(7.5);doc.setTextColor(...slate);doc.setFont('helvetica','italic');
         it.commentLines.forEach(l=>{doc.text(l,M+9,y);y+=4.5});
